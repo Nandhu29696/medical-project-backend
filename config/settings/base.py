@@ -103,9 +103,14 @@ else:
             "USER": env("DB_USER", default="mediance"),
             "PASSWORD": env("DB_PASSWORD", default=env("DB_PASS", default="")),
             "HOST": env("DB_HOST", default="localhost"),
-            "PORT": env("DB_PORT", default="5432"),
+            "PORT": env("DB_PORT", default="3306"),
         },
     }
+
+# Reuse a database connection across requests instead of opening one per request. Shared
+# hosts cap connections (Hostinger: 500 per hour per user), which a busy page uses up fast.
+DATABASES["default"]["CONN_MAX_AGE"] = env.int("DB_CONN_MAX_AGE", default=60)
+DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
 
 if DATABASES["default"]["ENGINE"] in ("django.db.backends.mysql", "common.db.mysql"):
     # Full Unicode (Hindi, Tamil, emoji) and strict mode, so bad data errors instead of
