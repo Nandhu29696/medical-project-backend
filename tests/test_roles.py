@@ -219,4 +219,8 @@ def test_seed_demo_creates_every_role_and_is_idempotent(settings, tmp_path):
     assert User.objects.get(email="doctor1@mediance.demo").doctor_profile.photo
     assert User.objects.get(email="patient1@mediance.demo").patient_profile.assigned_doctor
     assert UserRole.objects.count() == 15
-    assert list(tmp_path.rglob("*.png"))
+    # Demo images go to the configured storage (the database by default).
+    from apps.media_files.models import StoredFile
+
+    on_disk = list(tmp_path.rglob("*.png"))
+    assert StoredFile.objects.filter(name__endswith=".png").exists() or on_disk

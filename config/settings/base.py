@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "apps.audit",
     "apps.clinical",
     "apps.branding",
+    "apps.media_files",
 ]
 
 MIDDLEWARE = [
@@ -137,12 +138,23 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
-# No collectstatic step on Vercel: serve admin/API-docs assets straight from the apps.
+# Also serve admin/API-docs assets straight from the apps on Vercel, in case collectstatic
+# output is missing from the function bundle.
 WHITENOISE_USE_FINDERS = ON_VERCEL
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
+
+# Uploads (product images, photos, documents) are kept in the database by default, so they
+# work on serverless hosts with no lasting disk. MEDIA_STORAGE=filesystem uses MEDIA_ROOT.
+MEDIA_STORAGE_BACKENDS = {
+    "database": "apps.media_files.storage.DatabaseStorage",
+    "filesystem": "django.core.files.storage.FileSystemStorage",
+}
+STORAGES = {
+    "default": {"BACKEND": MEDIA_STORAGE_BACKENDS[env("MEDIA_STORAGE", default="database")]},
+    "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
