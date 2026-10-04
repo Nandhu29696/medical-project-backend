@@ -239,6 +239,10 @@ ADMINS = [("Admin", email) for email in env.list("ADMIN_EMAILS", default=[])]
 # --- Patient messaging (email + WhatsApp) ---
 # Public URL of the React app, used for links inside messages.
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173").rstrip("/")
+# The React app must always be allowed to call the API, even if CORS_ALLOWED_ORIGINS omits it.
+CORS_ALLOWED_ORIGINS = [*CORS_ALLOWED_ORIGINS, FRONTEND_URL]
+CORS_ALLOWED_ORIGINS = [origin.rstrip("/") for origin in dict.fromkeys(CORS_ALLOWED_ORIGINS)]
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=CORS_ALLOWED_ORIGINS)
 SITE_NAME = env("SITE_NAME", default="Mediance Neuro Life")
 # "sync" sends inside the request, "thread" sends right after it in the background
 # (no Redis needed), "celery" queues a Celery task (production). Vercel stops the function
