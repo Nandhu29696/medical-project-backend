@@ -81,7 +81,7 @@ ASGI_APPLICATION = "config.asgi.application"
 DATABASE_ENGINES = {
     "postgresql": "django.db.backends.postgresql",
     "postgres": "django.db.backends.postgresql",
-    "mysql": "django.db.backends.mysql",
+    "mysql": "common.db.mysql",  # Django's MySQL backend + time zone fallback for shared hosts
     "sqlite": "django.db.backends.sqlite3",
 }
 
@@ -95,16 +95,16 @@ else:
             ),
             "NAME": env("DB_NAME", default="mediance"),
             "USER": env("DB_USER", default="mediance"),
-            "PASSWORD": env("DB_PASSWORD", default=""),
+            "PASSWORD": env("DB_PASSWORD", default=env("DB_PASS", default="")),
             "HOST": env("DB_HOST", default="localhost"),
             "PORT": env("DB_PORT", default="5432"),
         },
     }
 
-if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
+if DATABASES["default"]["ENGINE"] in ("django.db.backends.mysql", "common.db.mysql"):
     # Full Unicode (Hindi, Tamil, emoji) and strict mode, so bad data errors instead of
-    # being silently truncated. MySQL also needs its time zone tables loaded for
-    # date grouping in reports (see docs/database-mysql.md).
+    # being silently truncated. Servers without time zone tables (shared hosting) are
+    # handled by common.db.mysql (see docs/database-mysql.md).
     DATABASES["default"].setdefault("OPTIONS", {}).update(
         {
             "charset": "utf8mb4",
