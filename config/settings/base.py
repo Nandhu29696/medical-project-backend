@@ -17,6 +17,13 @@ SECRET_KEY = env("SECRET_KEY", default="insecure-dev-key-change-me")
 DEBUG = env.bool("DEBUG", default=False)
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
 
+# Vercel sets VERCEL=1 and the deployment hostnames. Its filesystem is read-only except /tmp,
+# and nothing runs between requests, so a few defaults change there (see below).
+ON_VERCEL = env.bool("VERCEL", default=False)
+if ON_VERCEL:
+    vercel_hosts = (env("VERCEL_URL", default=""), env("VERCEL_PROJECT_PRODUCTION_URL", default=""))
+    ALLOWED_HOSTS += [host for host in vercel_hosts if host]
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -133,6 +140,8 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+# No collectstatic step on Vercel: serve admin/API-docs assets straight from the apps.
+WHITENOISE_USE_FINDERS = ON_VERCEL
 
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -198,7 +207,8 @@ CACHES = {
 # --- Email (SMTP) ---
 # Without SMTP settings in .env, emails are written as files to tmp/sent_emails/ instead.
 EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.filebased.EmailBackend")
-EMAIL_FILE_PATH = env("EMAIL_FILE_PATH", default=str(BASE_DIR / "tmp" / "sent_emails"))
+_EMAIL_DIR = "/tmp/sent_emails" if ON_VERCEL else str(BASE_DIR / "tmp" / "sent_emails")
+EMAIL_FILE_PATH = env("EMAIL_FILE_PATH", default=_EMAIL_DIR)
 EMAIL_HOST = env("EMAIL_HOST", default="localhost")
 EMAIL_PORT = env.int("EMAIL_PORT", default=587)
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", default="")
@@ -217,8 +227,9 @@ ADMINS = [("Admin", email) for email in env.list("ADMIN_EMAILS", default=[])]
 FRONTEND_URL = env("FRONTEND_URL", default="http://localhost:5173").rstrip("/")
 SITE_NAME = env("SITE_NAME", default="Mediance Neuro Life")
 # "sync" sends inside the request, "thread" sends right after it in the background
-# (no Redis needed), "celery" queues a Celery task (production).
-NOTIFICATIONS_DELIVERY = env("NOTIFICATIONS_DELIVERY", default="thread")
+# (no Redis needed), "celery" queues a Celery task (production). Vercel stops the function
+# when the response is sent, so background threads would be cut off there.
+NOTIFICATIONS_DELIVERY = env("NOTIFICATIONS_DELIVERY", default="sync" if ON_VERCEL else "thread")
 # Recipients on these domains are never contacted (demo/test data). ".demo" is not a real TLD.
 NOTIFICATIONS_SKIP_DOMAINS = env.list(
     "NOTIFICATIONS_SKIP_DOMAINS", default=["mediance.demo", "example.demo", "test.demo"]
