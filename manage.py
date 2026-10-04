@@ -1,11 +1,16 @@
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
+
 import os
 import sys
 
 
 def main():
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings.development")
+    # Vercel sets VERCEL=1 (build and runtime): use production settings there.
+    os.environ.setdefault(
+        "DJANGO_SETTINGS_MODULE",
+        "config.settings.production" if os.environ.get("VERCEL") else "config.settings.development",
+    )
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

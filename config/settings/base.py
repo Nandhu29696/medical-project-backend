@@ -97,9 +97,7 @@ if env("DATABASE_URL", default=None):
 else:
     DATABASES = {
         "default": {
-            "ENGINE": DATABASE_ENGINES.get(
-                env("DB_TYPE", default="postgresql"), "django.db.backends.postgresql"
-            ),
+            "ENGINE": DATABASE_ENGINES.get(env("DB_TYPE", default="mysql"), "common.db.mysql"),
             "NAME": env("DB_NAME", default="mediance"),
             "USER": env("DB_USER", default="mediance"),
             "PASSWORD": env("DB_PASSWORD", default=env("DB_PASS", default="")),
