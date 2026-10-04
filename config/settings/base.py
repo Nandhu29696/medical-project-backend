@@ -101,6 +101,18 @@ else:
         },
     }
 
+if DATABASES["default"]["ENGINE"] == "django.db.backends.mysql":
+    # Full Unicode (Hindi, Tamil, emoji) and strict mode, so bad data errors instead of
+    # being silently truncated. MySQL also needs its time zone tables loaded for
+    # date grouping in reports (see docs/database-mysql.md).
+    DATABASES["default"].setdefault("OPTIONS", {}).update(
+        {
+            "charset": "utf8mb4",
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+        }
+    )
+    DATABASES["default"]["TEST"] = {"CHARSET": "utf8mb4", "COLLATION": "utf8mb4_unicode_ci"}
+
 AUTH_USER_MODEL = "accounts.User"
 
 AUTH_PASSWORD_VALIDATORS = [

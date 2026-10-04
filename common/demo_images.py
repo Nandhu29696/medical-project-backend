@@ -38,18 +38,35 @@ def avatar_image(initials, background, filename, caption="DEMO"):
     return _png(image, filename)
 
 
-def product_image(title, subtitle, top, bottom, filename):
-    """Product shot placeholder: a labelled bottle on a gradient background."""
+def product_image(title, subtitle, top, bottom, filename, label="NEURO LIFE", shape="bottle"):
+    """Product shot placeholder: a labelled bottle, carton or jar on a gradient background."""
     width, height = 800, 800
     image = _vertical_gradient((width, height), top, bottom)
     draw = ImageDraw.Draw(image)
-    # bottle cap, body and label
-    draw.rounded_rectangle([340, 150, 460, 220], radius=12, fill=(40, 40, 60))
-    draw.rounded_rectangle([270, 210, 530, 650], radius=40, fill=(250, 250, 252))
-    draw.rectangle([270, 330, 530, 530], fill=top)
-    draw.text((400, 395), "MEDIANCE", fill="white", font=_font(34), anchor="mm")
-    draw.text((400, 445), "NEURO LIFE", fill="white", font=_font(30), anchor="mm")
-    draw.text((400, 490), "DEMO", fill="white", font=_font(22), anchor="mm")
+    white = (250, 250, 252)
+    if shape == "box":
+        # carton with a lid edge and a coloured band
+        draw.polygon([(250, 230), (300, 180), (600, 180), (550, 230)], fill=(225, 228, 236))
+        draw.polygon([(550, 230), (600, 180), (600, 600), (550, 650)], fill=(205, 210, 222))
+        draw.rectangle([250, 230, 550, 650], fill=white)
+        draw.rectangle([250, 340, 550, 540], fill=top)
+        cx, band = 400, (340, 540)
+    elif shape == "jar":
+        draw.rounded_rectangle([280, 200, 520, 270], radius=14, fill=(40, 40, 60))
+        draw.rounded_rectangle([250, 260, 550, 650], radius=60, fill=white)
+        draw.rectangle([250, 350, 550, 550], fill=top)
+        cx, band = 400, (350, 550)
+    else:
+        draw.rounded_rectangle([340, 150, 460, 220], radius=12, fill=(40, 40, 60))
+        draw.rounded_rectangle([270, 210, 530, 650], radius=40, fill=white)
+        draw.rectangle([270, 330, 530, 530], fill=top)
+        cx, band = 400, (330, 530)
+    mid = (band[0] + band[1]) / 2
+    draw.text((cx, mid - 45), "MEDIANCE", fill="white", font=_font(34), anchor="mm")
+    draw.text(
+        (cx, mid + 5), label, fill="white", font=_font(30 if len(label) <= 12 else 24), anchor="mm"
+    )
+    draw.text((cx, mid + 50), "DEMO", fill="white", font=_font(22), anchor="mm")
     draw.text((width / 2, 715), title, fill="white", font=_font(40), anchor="mm")
     draw.text((width / 2, 760), subtitle, fill="white", font=_font(24), anchor="mm")
     return _png(image, filename)

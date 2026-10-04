@@ -145,6 +145,67 @@ PATIENTS = [
 ]
 
 DEMO_NOTE = "Demo record — fictional data for local testing only."
+
+# Extra catalogue items. Names, prices and pack sizes are fictional placeholders; every
+# medical field (benefits, usage, precautions, composition) stays as the demo notice until
+# the client supplies approved wording.
+EXTRA_PRODUCTS = [
+    {
+        "slug": "mediance-sleep-calm",
+        "name": "Mediance Sleep Calm",
+        "label": "SLEEP CALM",
+        "shape": "bottle",
+        "short": "Demo product — night-time wellness capsules. Replace with approved wording.",
+        "pack": "30 capsules (demo)",
+        "mrp": 749,
+        "price": 649,
+        "colors": ((124, 92, 246), (76, 29, 149)),
+    },
+    {
+        "slug": "mediance-focus-plus",
+        "name": "Mediance Focus Plus",
+        "label": "FOCUS PLUS",
+        "shape": "box",
+        "short": "Demo product — daytime focus tablets. Replace with approved wording.",
+        "pack": "60 tablets (demo)",
+        "mrp": 899,
+        "price": 799,
+        "colors": ((217, 119, 6), (146, 64, 14)),
+    },
+    {
+        "slug": "mediance-omega-brain",
+        "name": "Mediance Omega Brain",
+        "label": "OMEGA BRAIN",
+        "shape": "jar",
+        "short": "Demo product — omega softgels. Replace with approved wording.",
+        "pack": "60 softgels (demo)",
+        "mrp": 1199,
+        "price": 1049,
+        "colors": ((13, 148, 136), (17, 94, 89)),
+    },
+    {
+        "slug": "mediance-b12-complex",
+        "name": "Mediance B12 Complex",
+        "label": "B12 COMPLEX",
+        "shape": "box",
+        "short": "Demo product — vitamin B12 tablets. Replace with approved wording.",
+        "pack": "30 tablets (demo)",
+        "mrp": 499,
+        "price": 449,
+        "colors": ((219, 39, 119), (131, 24, 67)),
+    },
+    {
+        "slug": "mediance-stress-ease",
+        "name": "Mediance Stress Ease",
+        "label": "STRESS EASE",
+        "shape": "bottle",
+        "short": "Demo product — everyday calm capsules. Replace with approved wording.",
+        "pack": "30 capsules (demo)",
+        "mrp": 799,
+        "price": 699,
+        "colors": ((2, 132, 199), (7, 89, 133)),
+    },
+]
 COMPLAINTS = [
     "Routine review (demo)",
     "Sleep difficulty (demo)",
@@ -198,6 +259,7 @@ class Command(BaseCommand):
         product = self._seed_product()
         campaigns = self._seed_campaigns()
         self._seed_product_media(product)
+        self._seed_catalogue()
         leads = self._seed_leads(users, product, campaigns)
         self._spread_lead_dates()
         self._seed_followups(leads, users)
@@ -255,6 +317,53 @@ class Command(BaseCommand):
             },
         )
         return product
+
+    def _seed_catalogue(self):
+        """Extra demo products so the catalogue has variety. All text is placeholder."""
+        demo_notice = "Demo content — replace with client-approved product information."
+        for spec in EXTRA_PRODUCTS:
+            product, _ = Product.objects.get_or_create(
+                slug=spec["slug"],
+                defaults={
+                    "name": spec["name"],
+                    "short_description": spec["short"],
+                    "description": demo_notice,
+                    "composition": demo_notice,
+                    "approved_benefits": demo_notice,
+                    "approved_usage": demo_notice,
+                    "precautions": demo_notice,
+                    "manufacturer": "Mediance Neuro Life (demo manufacturer)",
+                    "pack_size": spec["pack"],
+                    "mrp": spec["mrp"],
+                    "selling_price": spec["price"],
+                    "gst_percentage": 12,
+                    "status": spec.get("status", ProductStatus.ACTIVE),
+                },
+            )
+            if product.media.exists():
+                continue
+            top, bottom = spec["colors"]
+            shots = [
+                ("Front view (demo image)", top, bottom),
+                ("Pack shot (demo image)", bottom, top),
+            ]
+            for index, (subtitle, c1, c2) in enumerate(shots):
+                ProductMedia.objects.create(
+                    product=product,
+                    file=product_image(
+                        spec["name"],
+                        subtitle,
+                        c1,
+                        c2,
+                        f"{spec['slug']}-{index + 1}.png",
+                        label=spec["label"],
+                        shape=spec["shape"],
+                    ),
+                    media_type=ProductMediaType.IMAGE,
+                    alt_text=f"{spec['name']} — {subtitle}",
+                    sort_order=index,
+                    is_primary=index == 0,
+                )
 
     def _seed_campaigns(self):
         specs = [

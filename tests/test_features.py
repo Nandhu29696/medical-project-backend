@@ -418,3 +418,20 @@ def test_consultation_date_filters(api_client, admin_user, doctor, patient):
         "/api/v1/consultations/", {"scheduled_after": after, "scheduled_before": before}
     )
     assert response.data["data"]["count"] == 1
+
+
+@pytest.mark.django_db
+def test_deleting_consultation_removes_its_notifications(api_client, admin_user, doctor, patient):
+    consultation = Consultation.objects.create(
+        patient=patient, doctor=doctor, scheduled_at=_tomorrow_at(10)
+    )
+    link = f"/consultations/{consultation.id}"
+    Notification.objects.create(recipient=patient, title="Consultation confirmed", link=link)
+    Notification.objects.create(recipient=doctor, title="New consultation booked", link=link)
+    other = Notification.objects.create(recipient=patient, title="Welcome", link="/book")
+
+    api_client.force_authenticate(user=admin_user)
+    assert api_client.delete(f"/api/v1/consultations/{consultation.id}/").status_code == 204
+
+    assert not Notification.objects.filter(link=link).exists()
+    assert Notification.objects.filter(pk=other.pk).exists()

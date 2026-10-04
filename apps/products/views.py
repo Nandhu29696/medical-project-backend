@@ -49,14 +49,24 @@ class ProductViewSet(EnvelopeMixin, viewsets.ModelViewSet):
 class PublicProductListView(generics.ListAPIView):
     """Public website product catalog — only active products, no internal fields."""
 
-    queryset = Product.objects.filter(status=ProductStatus.ACTIVE).prefetch_related("media")
+    # Oldest first, so the flagship product stays first as the catalogue grows.
+    queryset = (
+        Product.objects.filter(status=ProductStatus.ACTIVE)
+        .prefetch_related("media")
+        .order_by("created_at")
+    )
     serializer_class = ProductPublicSerializer
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
 
 
 class PublicProductDetailView(generics.RetrieveAPIView):
-    queryset = Product.objects.filter(status=ProductStatus.ACTIVE).prefetch_related("media")
+    # Oldest first, so the flagship product stays first as the catalogue grows.
+    queryset = (
+        Product.objects.filter(status=ProductStatus.ACTIVE)
+        .prefetch_related("media")
+        .order_by("created_at")
+    )
     serializer_class = ProductPublicSerializer
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
